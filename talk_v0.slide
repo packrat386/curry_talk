@@ -1,0 +1,94 @@
+Making Gopher Curry
+Dependency injection, closures, and http.Handlers
+
+Aidan Coyle
+Jarvis
+acoyle@enova.com
+
+* What's it all about?
+
+Would you believe there's no recipes on the internet for gopher curry?
+
+We can talk about functional programming instead
+
+However, the go caveat applies
+
+Disclaimer: this is quick and dirty example code
+
+* Functional principles
+
+Couple things to draw inspiration from
+
+- Functions are a good basic unit of structure and composition
+- What a function does should be driven by its arguments
+
+* Tool #1: first class functions
+
+.code first_class_function.go /START OMIT/,/END OMIT/
+
+* Tool #2: closures
+
+.code closure.go /START OMIT/,/END OMIT/
+
+* Plain handler.go
+
+.code plain/handler.go /START OMIT/,/END OMIT/
+
+* Plain main.go
+
+.code plain/main.go /START OMIT/,/END OMIT/
+
+* Problems
+
+When do we init our globals?
+
+What do we do about tests?
+
+How do we ensure nobody overwrites?
+
+* What is our handler function?
+
+Really it's something like: 
+
+  func getRecipe(w http.ResponseWriter, r *http.Handler, db Store, logger *log.Logger) { /* ... */ }
+
+* But how do we route it?
+
+  func getRecipeHandler(db Store, log *log.Logger) func(w http.ResponseWriter, r *http.Request) {
+          return func(w http.ResponseWriter, r *http.Request) {
+                  getRecipe(w, r, db, log)
+          }
+  }
+
+* Don't forget interfaces
+
+We don't actually need the whole store
+
+  type RecipeReader interface {
+          ReadRecipe(name string) ([]byte, error)
+  }
+
+* The HandlerFunc trick
+
+.code handler_func.go
+
+* Middleware
+
+We can use this with closures to compose http.Handlers with state
+
+.code mw.go
+
+* "Functional" handler.go
+
+.code functional/handler.go /START OMIT/,/END OMIT/
+
+* "Functional" main.go
+
+.code functional/main.go /START OMIT/,/END OMIT/
+
+* Takeaways
+
+- Functional principles can improve testability and composability
+- net/http is particularly suited to this pattern already
+- Explicit dependencies are superior to implicit ones
+- Be careful with closures
